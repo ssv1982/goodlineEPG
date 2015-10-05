@@ -1,1 +1,1 @@
-# goodlineEPG
+конвертер программы телепередач из JTV в XMLTV для GoodLine IPTV
