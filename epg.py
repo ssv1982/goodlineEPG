@@ -19,7 +19,6 @@ def getFiletime(dt):
 url="http://bolshoe.tv/altdynplaylist/"
 req = urllib.request.urlopen(url).read()
 
-#print(req.decode('utf-8'))
 root_logo = lxml.etree.fromstring(req)
 logo = {}
 tracklist=root_logo.findall('{http://xspf.org/ns/0/}trackList')[0]
@@ -58,13 +57,6 @@ for cn in f_list:
 
 
 for cn in f_list:
-#    chanel=lxml.etree.SubElement(root, "channel")
-#    chanel.set("id","id_"+cn)
-#    dn=lxml.etree.SubElement(chanel, "display-name")
-#    dn.set('lang','ru')
-#    dn.text=cn
-#    icon=lxml.etree.SubElement(chanel, "icon")
-#    icon.set('src',logo.get(cn,''))
     file = open(tmpdir.name+'/'+cn+'.ndx','rb')
     file2 =open(tmpdir.name+'/'+cn+'.pdt','rb')
 
