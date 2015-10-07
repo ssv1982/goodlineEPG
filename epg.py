@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+# -*- coding: utf-8 -*-
 import struct
 import os
 import datetime
@@ -6,7 +7,7 @@ import lxml.etree
 import tempfile
 from zipfile import ZipFile
 import urllib.request
-
+import re
 
 def getFiletime(dt):
     microseconds = dt / 10
@@ -15,10 +16,15 @@ def getFiletime(dt):
     return datetime.datetime(1601, 1, 1) + datetime.timedelta(days, seconds, microseconds)
 
 
+def getCategory(str):
+    if not re.search('(News|[Нн]овости|Вести|Время|Сегодня)',str) is None:
+        return 'Новости'
+    return None
+
+
 
 url="http://bolshoe.tv/altdynplaylist/"
 req = urllib.request.urlopen(url).read()
-
 root_logo = lxml.etree.fromstring(req)
 logo = {}
 tracklist=root_logo.findall('{http://xspf.org/ns/0/}trackList')[0]
@@ -26,7 +32,6 @@ for track in tracklist.findall('{http://xspf.org/ns/0/}track'):
     psfile=track.findall('{http://xspf.org/ns/0/}psfile')[0]
     image=track.findall('{http://xspf.org/ns/0/}image')[0]
     logo[psfile.text]=image.text.replace(' ','%20')
-
 url="http://bolshoe.tv/tv.zip"
 req = urllib.request.urlopen(url).read()
 tmpdir=tempfile.TemporaryDirectory()
@@ -46,7 +51,8 @@ z.close()
 
 root = lxml.etree.Element('tv')
 
-for cn in f_list:
+#for cn in f_list:
+for cn in sorted(logo.keys()):
     chanel=lxml.etree.SubElement(root, "channel")
     chanel.set("id","id_"+cn)
     dn=lxml.etree.SubElement(chanel, "display-name")
@@ -55,8 +61,9 @@ for cn in f_list:
     icon=lxml.etree.SubElement(chanel, "icon")
     icon.set('src',logo.get(cn,''))
 
-
-for cn in f_list:
+logo
+#for cn in f_list:
+for cn in sorted(logo.keys()):
     file = open(tmpdir.name+'/'+cn+'.ndx','rb')
     file2 =open(tmpdir.name+'/'+cn+'.pdt','rb')
 
@@ -80,6 +87,12 @@ for cn in f_list:
         title_xml.set('lang','ru')
         title_xml.text=title.decode('cp1251')
         programme.set('channel','id_'+cn)
+        
+        cat=getCategory(title_xml.text)
+        if not cat is None:
+            category=lxml.etree.SubElement(programme, "category")
+            category.set('lang','ru')
+            category.text=cat
 
         if i>0:
             programme_prev.set('stop',time)
