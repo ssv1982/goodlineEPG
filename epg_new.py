@@ -41,14 +41,15 @@ def do_work(key, val, result, n_th):
 def worker(numTread):
     while True:
         item = q.get()
-        print('Поток', numTread, ':', item)
+        print('Thread', numTread, ':', item)
         do_work(item, tv_sootv[item], yandex_descriptions, numTread)
         q.task_done()
-        print('Поток', numTread, ': Закончен. Осталось в очереди:', q.qsize())
+        print('Thread', numTread, ': Done')
 
 
 ts = datetime.datetime.now()
 yandex_descriptions = {}
+
 print('Загрузка описаний передач для', len(tv_sootv), 'каналов')
 
 q = queue.Queue()
@@ -61,7 +62,7 @@ for item in tv_sootv.keys():
 
 q.join()
 
-print('Все описания загружены.')
+print('очередь закончилась')
 
 
 def getFiletime(dt):
@@ -167,5 +168,4 @@ xml.write(lxml.etree.tostring(root,
                               xml_declaration=True))
 tmpdir.cleanup()
 tf = datetime.datetime.now()
-dif = tf - ts
-print(ts, '---', tf, '=', dif)
+print(ts, '---', tf)

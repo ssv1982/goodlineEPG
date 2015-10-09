@@ -1,2 +1,4 @@
 __pycache__/
 GoodLine_EPG.xml
+*.swp
+.ropeproject/
