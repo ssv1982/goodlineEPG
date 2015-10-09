@@ -26,6 +26,7 @@ def getCategory(str):
         return 'Новости'
     return None
 
+ts=datetime.datetime.now()
 url = "http://bolshoe.tv/altdynplaylist/"
 req = urllib.request.urlopen(url).read()
 root_logo = lxml.etree.fromstring(req)
@@ -54,10 +55,16 @@ z.close()
 
 root = lxml.etree.Element('tv')
 
-tv_sootv = {'156': 837,
-            '1': 582,
-            '161': 578,
-            '160': 573
+tv_sootv = {'156': 837,   # Первый канал HD
+            '1': 582,     # Россия 1
+            '161': 578,   # ТНТ
+            '160': 573,   # Домашний
+            '4': 44,      # НТВ
+            '167': 602,   # РЕН-ТВ
+            '5': 496,     # СТС
+            '7': 515,     # Россия 2
+            '169': 1000,  # ОТР
+            '6': 517      # ТВЦ
             }
 
 for cn in sorted(logo.keys()):
@@ -126,3 +133,5 @@ xml.write(lxml.etree.tostring(root,
                               encoding='utf-8',
                               xml_declaration=True))
 tmpdir.cleanup()
+tf = datetime.datetime.now()
+print(ts, '---', tf)

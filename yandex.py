@@ -14,7 +14,7 @@ def getDescription(url):
     http = PoolManager()
     r = http.request('GET', url,
                      timeout=Timeout(connect=1.0, read=2.0),
-                     retries=Retry(3, redirect=False)
+                     retries=Retry(5, redirect=False)
                      )
 
 #    req = urllib.request.urlopen(url).read()
@@ -44,7 +44,7 @@ def getProgramm(channel,bdate = datetime.date.today() - datetime.timedelta(days=
         http = PoolManager()
         r = http.request('GET', url,
                          timeout=Timeout(connect=1.0, read=2.0),
-                         retries=Retry(3, redirect=False)
+                         retries=Retry(5, redirect=False)
                          )
 #        req = urllib.request.urlopen(url).read()
 
