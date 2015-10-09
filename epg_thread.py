@@ -7,9 +7,55 @@ import lxml.etree
 import tempfile
 from zipfile import ZipFile
 import urllib.request
-import re
-
+import queue
+import threading
 import yandex
+
+num_worker_threads = 10
+
+tv_sootv = {'156': 837,   # Первый канал HD
+            '1': 582,     # Россия 1
+            '161': 578,   # ТНТ
+            '160': 573,   # Домашний
+            '4': 44,      # НТВ
+            '167': 602,   # РЕН-ТВ
+            '5': 496,     # СТС
+            '7': 515,     # Россия 2
+            '169': 1000,  # ОТР
+            '6': 517      # ТВЦ
+            }
+
+yandex_descriptions = {}
+
+
+def do_work(key, val, result, n_th):
+        result[key] = yandex.getProgramm(n_th, val)
+        # print(key)
+
+
+def worker(numTread):
+    while True:
+        item = q.get()
+        print('Thread', numTread, ':', item)
+        do_work(item, tv_sootv[item], yandex_descriptions, numTread)
+        q.task_done()
+        print('Thread', numTread, ': Done')
+
+
+ts = datetime.datetime.now()
+
+
+q = queue.Queue()
+for i in range(num_worker_threads):
+    t = threading.Thread(target=worker, args=(i, ))
+    t.daemon = True
+    t.start()
+for item in tv_sootv.keys():
+    q.put(item)
+
+q.join()
+
+print('очередь закончилась')
 
 
 def getFiletime(dt):
@@ -21,12 +67,6 @@ def getFiletime(dt):
                                                               microseconds)
 
 
-def getCategory(str):
-    if not re.search('(News|[Нн]овости|Вести|Время|Сегодня)', str) is None:
-        return 'Новости'
-    return None
-
-ts=datetime.datetime.now()
 url = "http://bolshoe.tv/altdynplaylist/"
 req = urllib.request.urlopen(url).read()
 root_logo = lxml.etree.fromstring(req)
@@ -53,19 +93,9 @@ for q in files:
         f_list.append(name)
 z.close()
 
-root = lxml.etree.Element('tv')
+print('Обработана программа GoodLine')
 
-tv_sootv = {'156': 837,   # Первый канал HD
-            '1': 582,     # Россия 1
-            '161': 578,   # ТНТ
-            '160': 573,   # Домашний
-            '4': 44,      # НТВ
-            '167': 602,   # РЕН-ТВ
-            '5': 496,     # СТС
-            '7': 515,     # Россия 2
-            '169': 1000,  # ОТР
-            '6': 517      # ТВЦ
-            }
+root = lxml.etree.Element('tv')
 
 for cn in sorted(logo.keys()):
     chanel = lxml.etree.SubElement(root, "channel")
@@ -83,10 +113,7 @@ for cn in sorted(logo.keys()):
     programme_prev = 0
     byte = file.read(2)
 
-    yandex_channel = tv_sootv.get(cn)
-    progs_desc = None
-    if yandex_channel is not None:
-        progs_desc = yandex.getProgramm(yandex_channel)
+    progs_desc = yandex_descriptions.get(cn)
 
     num = struct.unpack('h', byte)[0]
     for i in range(num-1):
@@ -116,7 +143,7 @@ for cn in sorted(logo.keys()):
                 description = lxml.etree.SubElement(programme, "desc")
                 description.set('lang', 'ru')
                 description.text = descr[1]
-                sub_title = lxml.etree.SubElement(programme, "sub_title")
+                sub_title = lxml.etree.SubElement(programme, "sub-title")
                 sub_title.set('lang', 'ru')
                 sub_title.text = descr[0]
 
@@ -134,4 +161,5 @@ xml.write(lxml.etree.tostring(root,
                               xml_declaration=True))
 tmpdir.cleanup()
 tf = datetime.datetime.now()
-print(ts, '---', tf)
+dif=tf-ts
+print(ts, '---', tf,'=',dif)
