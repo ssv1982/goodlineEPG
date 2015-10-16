@@ -11,25 +11,27 @@ import queue
 import threading
 import yandex
 
-num_worker_threads = 5
+num_worker_threads = 10
 
-tv_sootv = {'156': 837,   # Первый канал HD
-            '1': 582,     # Россия 1
-            '161': 578,   # ТНТ
-            '160': 573,   # Домашний
-            '4': 44,      # НТВ
-            '167': 602,   # РЕН-ТВ
-            '5': 496,     # СТС
-            '7': 515,     # Россия 2
-            '169': 1000,  # ОТР
-            '9': 636,     # Россия К
-            '11': 829,    # Звезда
-            '13': 955,    # Мой город
-            '15': 245,    # 5 Канал
-            '14': 144,    # ТВ3
-            '18': 772,     # Карусель
-            '19': 186,     # Дисней
-            '20': 66,     # Детский
+tv_sootv = {'156': {'chID': 837, 'timeshift': 0, 'title': 'Первый канал HD'},
+            '1': {'chID': 582, 'timeshift': 0, 'title': 'Россия 1'},
+            '161': {'chID': 578, 'timeshift': 0, 'title': 'ТНТ'},
+            '160': {'chID': 573, 'timeshift': 0, 'title': 'Домашний'},
+            '4': {'chID': 44, 'timeshift': 0, 'title': 'НТВ'},
+            '167': {'chID': 602, 'timeshift': 0, 'title': 'РЕН-ТВ'},
+            '5': {'chID': 496, 'timeshift': 0, 'title': 'СТС'},
+            '7': {'chID': 515, 'timeshift': 0, 'title': 'Россия 2'},
+            '169': {'chID': 1000, 'timeshift': 0, 'title': 'ОТР'},
+            '9': {'chID': 636, 'timeshift': 0, 'title': 'Россия К'},
+            '11': {'chID': 829, 'timeshift': 180, 'title': 'Звезда'},
+            '13': {'chID': 955, 'timeshift': 0, 'title': 'Мой город'},
+            '15': {'chID': 245, 'timeshift': 0, 'title': '5 Канал'},
+            '14': {'chID': 144, 'timeshift': 60, 'title': 'ТВ3'},
+            '18': {'chID': 772, 'timeshift': 180, 'title': 'Карусель'},
+            '19': {'chID': 186, 'timeshift': 120, 'title': 'Дисней'},
+            '20': {'chID': 66, 'timeshift': 0, 'title': 'Детский'},
+            '23': {'chID': 567, 'timeshift': 0, 'title': 'Nickelodeon '},
+            '6': {'chID': 517, 'timeshift': 0, 'title': 'ТВЦ'},
             }
 
 
@@ -41,13 +43,44 @@ def do_work(key, val, result, n_th):
 def worker(numTread):
     while True:
         item = q.get()
-        print('Поток', numTread, ':', item)
+        print('Поток', numTread, ':', item, 'Канал:', tv_sootv[item]['title'])
         do_work(item, tv_sootv[item], yandex_descriptions, numTread)
         q.task_done()
-        print('Поток', numTread, ': Закончен. Осталось в очереди:', q.qsize())
+        print('Поток', numTread,
+              'Канал:', tv_sootv[item]['title'],
+              ': Закончен. Осталось в очереди:', q.qsize())
 
 
 ts = datetime.datetime.now()
+
+
+url = "http://bolshoe.tv/altdynplaylist/"
+req = urllib.request.urlopen(url).read()
+root_logo = lxml.etree.fromstring(req)
+logo = {}
+m3u = open('GoodLine_http.m3u', 'w')
+m3u_udp = open('GoodLine.m3u', 'w')
+m3u.write('#EXTM3U\n')
+m3u_udp.write('#EXTM3U\n')
+
+tracklist = root_logo.findall('{http://xspf.org/ns/0/}trackList')[0]
+for track in tracklist.findall('{http://xspf.org/ns/0/}track'):
+    psfile = track.findall('{http://xspf.org/ns/0/}psfile')[0]
+    image = track.findall('{http://xspf.org/ns/0/}image')[0]
+    logo[psfile.text] = image.text.replace(' ', '%20')
+    title = track.findall('{http://xspf.org/ns/0/}title')[0]
+    location = track.findall('{http://xspf.org/ns/0/}location')[0]
+    txt = '#EXTINF:-1 tvg-name="' + psfile.text + '" ,' + title.text+'\n'
+    m3u.write(txt)
+    m3u_udp.write(txt)
+    m3u_udp.write(location.text+'\n')
+    m3u.write('http://192.168.98.1:4022/' +
+              location.text.replace('://@', '/') + '\n')
+
+m3u.close()
+m3u_udp.close()
+
+
 yandex_descriptions = {}
 print('Загрузка описаний передач для', len(tv_sootv), 'каналов')
 
@@ -73,15 +106,6 @@ def getFiletime(dt):
                                                               microseconds)
 
 
-url = "http://bolshoe.tv/altdynplaylist/"
-req = urllib.request.urlopen(url).read()
-root_logo = lxml.etree.fromstring(req)
-logo = {}
-tracklist = root_logo.findall('{http://xspf.org/ns/0/}trackList')[0]
-for track in tracklist.findall('{http://xspf.org/ns/0/}track'):
-    psfile = track.findall('{http://xspf.org/ns/0/}psfile')[0]
-    image = track.findall('{http://xspf.org/ns/0/}image')[0]
-    logo[psfile.text] = image.text.replace(' ', '%20')
 url = "http://bolshoe.tv/tv.zip"
 req = urllib.request.urlopen(url).read()
 tmpdir = tempfile.TemporaryDirectory()

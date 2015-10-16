@@ -54,7 +54,9 @@ def getDescription(url):
     if doc is None:
         return (None, None)
     descr = doc.find_class("b-tv-program-description__description")
-    type_prog = doc.find_class("tv-program-meta__program-type-name")[0].text
+    t_p = doc.find_class("tv-program-meta__program-type-name")
+    if len(t_p) > 0:
+        type_prog = t_p[0].text
     if len(descr) > 0:
         descr = descr[0]
         descr = descr.getchildren()
@@ -76,7 +78,7 @@ def getProgramm(numThread, channel, bdate=datetime.date.today() -
     for i in range(num_days):
         dt = bdate+datetime.timedelta(days=i)
         url = "https://tv.yandex.ru/64/channels/" + \
-            str(channel)+"?date="+str(dt)+"&period=all-day"
+            str(channel['chID'])+"?date="+str(dt)+"&period=all-day"
         getProgrammDay(channel, dt, url, prog_week)
     print('Thread', numThread, 'list programm recieved')
     for i in range(num_yandex_threads):
@@ -97,9 +99,11 @@ def getProgrammDay(channel, dt, url, pr_w):
     if tv is None:
         return
     tv.make_links_absolute(url)
-    programm = tv.find_class("b-tv-channel-schedule__items").pop()
-    if programm is None:
+    programm = tv.find_class("b-tv-channel-schedule__items")
+    if len(programm) == 0:
         return
+    else:
+        programm = programm.pop()
     dt_prev = datetime.datetime(1, 1, 1)
     # child = None
     for child in programm.getchildren():
@@ -111,10 +115,10 @@ def getProgrammDay(channel, dt, url, pr_w):
             tmp = ww[0].text
             time = None
             try:
-                h, m = tmp.split(':')
+                h, m = tmp.ljust(5).split(':')
                 time = datetime.datetime(1, 1, 1, int(h), int(m))
-
-                dt = datetime.datetime.combine(dt, time.time())
+                timeshift = datetime.timedelta(minutes=channel['timeshift'])
+                dt = datetime.datetime.combine(dt, time.time())+timeshift
                 if dt_prev > dt:
                     dt = dt+datetime.timedelta(days=1)
                 # info = getDescription(child2.attrib['href'])
