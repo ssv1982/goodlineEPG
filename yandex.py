@@ -112,9 +112,16 @@ def getProgrammDay(channel, dt, url, pr_w):
             ww = child2.getchildren()
             prog_name = ww[1].getchildren().pop().text
             descr_url = child2.attrib['href']
-            tmp = ww[0].text
+            #tmp = ww[0].text
+            tmp = ww[0].getchildren().pop().text
             time = None
             try:
+                #print('-----')
+                #print(url)
+                #print(prog_name)
+                #print('-----')
+                #print(ww[0].getchildren().pop().text)
+                #print('-----')
                 h, m = tmp.ljust(5).split(':')
                 time = datetime.datetime(1, 1, 1, int(h), int(m))
                 timeshift = datetime.timedelta(minutes=channel['timeshift'])
